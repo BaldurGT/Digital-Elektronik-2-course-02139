@@ -10,4 +10,4 @@ This work is licensed under the *Creative Commons Attribution–NonCommercial 4.
 - **NonCommercial** — The material may not be used for commercial purposes.
 
 For the full license text, see:
-(creativecommons.org)[https://creativecommons.org/licenses/by-nc/4.0/]
+[https://creativecommons.org/licenses/by-nc/4.0/](creativecommons.org)
