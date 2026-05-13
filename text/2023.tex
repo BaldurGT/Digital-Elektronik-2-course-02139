@@ -1,0 +1,226 @@
+\documentclass[main.tex]{subfiles}
+\begin{document}
+
+\subsection{Problem 1}
+\begin{figure} [h]
+    \centering
+    \includegraphics[width=0.6\linewidth]{images//2023/Q1-2023.png}
+\end{figure}
+
+Sketch the Chisel code for the circuit in the figure. The register shall be 10 bits wide and shall be initialized to 0 on reset. Explain in your own words what the circuit does.
+
+\subsubsection{Solution}
+
+\begin{adjustwidth}{2em}{0pt}
+    \begin{verbatim}
+        import chisel3._
+        import chisel3.util._
+        
+        class Circuit extends Module {
+            val io = IO(new Bundle {
+                val go  = Input(Bool())
+                val done = Output(Bool())
+            })
+
+            // Inint cnt starting at 0, and 10 bit wide.
+            val cnt = RegInit(0.U(10.W))
+
+            // Set done high, unless counter is 0.
+            val done = cnt === 0.U 
+            
+            // count 1 down.
+            val dec = cnt - 1.U
+            
+            // Set cnt to 5 when go is high, else subtract one
+            cnt := Mux(io.go,
+                    5.U, 
+                    Mux(done,
+                    0.U,
+                    dec
+                )
+            )
+
+            // Output.
+            io.done := done
+        }
+    \end{verbatim}
+    This circuit implements a counter, counting from 5 to 0, the current number is stored in a 10 bit wide register. 
+
+    The output is a boolean, that remains low as long as the counter has not reached 0, when reach 0 the counter goes high and stop counting down. 
+\end{adjustwidth}
+
+\newpage
+\subsection{Problem 2}
+Given following Chisel code:
+\begin{verbatim}
+    import chisel3._
+    import chisel3.util._
+        
+    class X extends Module {
+        val io = IO(new Bundle{
+            val in = Flipped(new DecoupledIO(UInt(8.W)))
+            val out = new DecoupledIO(UInt(8.W))
+        })
+        
+        val dataReg = Reg(UInt(8.W))
+        val emptyReg = RegInit(true.B)
+        
+        io.in.ready := emptyReg
+        io.out.valid := !emptyReg
+        io.out.bits := dataReg
+        
+        when (emptyReg & io.in.valid) {
+            dataReg := io.in.bits
+            emptyReg := false.B
+        }
+        
+        when (!emptyReg & io.out.ready) {
+            emptyReg := true.B
+        }
+    }
+        
+    // DecoupledIO is a Chisel library class and defined as follows:
+    class DecoupledIO[T <: Data](gen: T) extends Bundle {
+        val ready = Input(Bool())
+        val valid = Output(Bool())
+        val bits = Output(gen)
+    }
+\end{verbatim}
+Explain the function and draw a block diagram.
+
+\newpage
+\subsubsection{Solution} 
+\begin{figure} [h]
+    \centering
+    \includegraphics[width=0.6\linewidth]{images//2023/Q2-2023.png}
+\end{figure}
+
+\begin{adjustwidth}{2em}{0pt}
+    This is a single-element Decoupled buffer, where one word is stored at a time. It is used when a sender and receiver are transferring data. The valid flag is used by the sender to indicate that valid data is available, and the ready flag is used by the receiver to indicate that it is ready to receive the data.
+
+    This way, data is only transferred when: \\
+    1. valid data is available, and \\
+    2. the receiver is ready to receive it.
+
+    dataReg is an 8-bit register used to store a data value. The stored data comes from io.in.bits, and the output data is connected to io.out.bits.
+    
+    emptyReg is a Boolean register that indicates whether the buffer is empty. It is used to control the ready and valid handshake signals.
+    
+    When emptyReg is true and io.in.valid is true, the module accepts input data. The value from io.in.bits is stored into dataReg, and emptyReg is set to false, indicating that the buffer now contains valid data.
+    
+    When emptyReg is false and io.out.ready is true, the output data has been accepted by the receiver. The module then sets emptyReg to true, indicating that the buffer is empty again.
+\end{adjustwidth}
+
+\subsection{Problem 3}
+Given following circuit and timing parameters, Find and describe the critical path in the circuit. What is the maximum clock frequency?
+
+\begin{multicols}{2}
+    \centering
+    \includegraphics[width=1\linewidth]{images//2023/Q3-cuircit-2023.png}
+    \includegraphics[width=1\linewidth]{images//2023/Q3-timing-2023.png}
+\end{multicols}
+
+\subsubsection{Solution}
+\begin{adjustwidth}{2em}{0pt}
+    We look at the longest path, that being R1-G3-G4-G5-R5, or R1-G2-G4-G5-R5. In number of gates, but noticing that a inverter is slidlig shorter than an or gate making R1-G2-G4-G5-R5 the longest.
+
+    meaning we have a critical time of $t_{SU}+t_{Q, prop} + 3 \cdot t_{prop}$, or:
+    \begin{align}
+        3ps + 7ps + 3 \cdot 5ps = 25ps
+    \end{align}
+
+    OR a frequency of $f = \frac{1}{T} = \frac{1}{25 \cdot 10^{-12}} = 40 GHz$
+\end{adjustwidth}
+
+\newpage
+\subsection{problem 4}
+Assume you have inputs from a bouncing button to your circuit. The input signals are not noisy, so no filtering is needed. What circuit do you need for your input? Explain in plain text what is needed and sketch some Chisel code.
+
+\subsubsection{Solution}
+\begin{adjustwidth}{2em}{0pt}
+    We need a debouncing circuit. One solution is subsampling the input with a low enough frequency. Chisel code:
+    
+    \begin{verbatim}
+        import chisel3._
+        import chisel3.util._
+        
+        class Circuit extends Module {
+            val io = IO(new Bundle {
+                val buttonIn  = Input(Bool())
+                val buttonOut = Output(Bool())
+          })
+
+        val buttonReg = Reg(Bool())
+        buttonReg := io.buttonIn
+        val buttonDebReg = RegInit(false.B)
+        
+        val cnt = RegInit(0.U(32.W))
+        val fac = 100000000/100
+        val tick = cnt === (fac-1).U
+        cnt := cnt + 1.U
+        
+        when(tick) {
+            cnt := 0.U
+            buttonDebReg := buttonReg
+        }
+
+        io.buttonOut := buttonDebReg
+        }
+    \end{verbatim}
+\end{adjustwidth}
+
+\newpage
+\subsection{problem 5}
+Draw a block digram for a saturating counter that can count up, count down, and load.
+
+This counter, however, must saturate when counting up (at a programmable maximum count) and counting down (at zero).
+
+Also sketch Chisel code to describe this circuit.
+
+\subsubsection{Solution}
+
+\begin{figure} [h]
+    \centering
+    \includegraphics[width=0.5\linewidth]{images//2023/Q5-2023.png}
+\end{figure}
+
+\begin{adjustwidth}{2em}{0pt}
+    \begin{verbatim}
+        import chisel3._
+        import chisel3.util._
+        
+        class Circuit extends Module {
+            val io = IO(new Bundle {
+                val direction = Input(Bool())      // true = up, false = down
+                val load      = Input(Bool())
+                val loadData  = Input(UInt(8.W))
+                val maxVal    = Input(UInt(8.W))
+                val output    = Output(UInt(8.W))
+          })
+        
+        val cnt = RegInit(0.U(8.W))
+        
+        when(io.load) {
+            cnt := io.loadData
+        
+        } .elsewhen(io.direction) {       // count up
+            when(cnt < io.maxVal) {
+                cnt := cnt + 1.U
+            } .otherwise {
+                cnt := io.maxVal
+            }
+        
+        } .otherwise {                    // count down
+            when(cnt > 0.U) {
+                cnt := cnt - 1.U
+            } .otherwise {
+                cnt := 0.U
+            }
+        }
+        
+        io.output := cnt
+        }
+    \end{verbatim}    
+\end{adjustwidth}
+
+\end{document}

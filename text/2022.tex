@@ -1,0 +1,198 @@
+\documentclass[main.tex]{subfiles}
+\begin{document}
+
+\subsection{Problem 1}
+Sketch the Chisel code for the circuit in the figure. The register shall be 8 bits wide and shall be initialized to 0 on reset.
+
+Explain in your own words what the circuit does.
+\begin{figure} [h]
+    \centering
+    \includegraphics[width=0.5\linewidth]{images//2022/Q1-2022.png}
+\end{figure}
+
+\subsubsection{Solution}
+\begin{adjustwidth}{2em}{0pt}
+    \begin{multicols}{2}
+    \begin{verbatim}
+        import chisel3._
+        import chisel3.util._
+        
+        class Circuit extends Module {
+            val io = IO(new Bundle {
+                val sel  = Input(UInt(2.W))
+                val regAcc = Output(UInt(8.W))
+            })
+        
+            val regAcc = RegInit(0.U(8.W))
+
+            // Adders
+            val plus1 = regAcc + 1.U
+            val plus3 = regAcc + 3.U
+
+            val muxVal = MuxLookup(io.sel, regAcc)(
+                Seq(
+                    0.U -> regAcc,
+                    1.U -> 0.U,
+                    2.U -> plus1,
+                    3.U -> plus3
+                )
+            )
+
+            regAcc := muxVal
+            io.regAcc := regAcc
+        }
+    \end{verbatim}
+    \columnbreak
+    \begin{verbatim}
+        import chisel3._
+        import chisel3.util._
+
+        class Circuit extends Module {
+            val io = IO(new Bundle {
+                val sel  = Input(UInt(2.W))
+                val regAcc = Output(UInt(8.W))
+            })
+
+            val regAcc = RegInit(0.U(8.W))
+
+            switch(sel) {
+                is(0.U) {regAcc := regAcc}
+                is(1.U) {regAcc := 0}
+                is(2.U) {RegAcc := regAcc + 1.U}
+                is(3.U) {RegAcc := regAcc + 3.U}
+            }
+            
+            io.regAcc := regAcc
+    \end{verbatim}  
+    \end{multicols}
+    The system consists of an register than through the select signal Sel, can be set to 0, or increment by +1, or +3. 
+
+    The output is the stored value of the register.
+\end{adjustwidth}
+
+\newpage
+\subsection{Problem 2}
+Given following Chisel code:
+\begin{verbatim}
+    class X extends Module {
+        val io = IO(new Bundle{
+            val o = Output(UInt(32.W))
+        })
+        val r = RegInit(0.U(32.W))
+        val s = RegInit(0.U(32.W))
+        r := r + 1.U
+        when (r === 100000.U) {
+            r := 0.U
+            s := s + 1.U
+        }
+        io.o := s
+    }
+\end{verbatim}
+Explain the function and draw a block diagram.
+
+\subsubsection{solution}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.5\linewidth]{images//2022/Q2-2022.png}
+\end{figure}
+\begin{adjustwidth}{2em}{0pt}
+    This system consists of two registers, r and s. The r-reister starts at 0 and counts to 10000 before reseating to 0.
+    
+    When the r-register resets to 0, the s-register increments by 1, the output is the value stored by the s-register.
+\end{adjustwidth}
+
+\newpage
+\subsection{Problem 3}
+\begin{multicols}{2}
+    \includegraphics[width=1\linewidth]{images//2022/Q3-circuit-2022.png}
+    \columnbreak
+    \includegraphics[width=1\linewidth]{images//2022/Q3-timing-2022.png}
+\end{multicols}
+Find and describe the critical path in the circuit shown in the figure.
+What is the maximum clock frequency?
+
+\subsubsection{Solution}
+\begin{adjustwidth}{2em}{0pt}
+    There are 4 routes, that are equaly long:\\
+    R1-G2-G4-G5-R5\\
+    R1-G2-G3-G7-R6\\
+    R2-G2-G4-G5-R5\\
+    Rr-G2-G3-G7-R6
+
+    Calculating the time we get, DFF clock-to-Q delay + 4 gate delays + setup time. With tCQ prop = 11ps, gate prop = 7ps, tSU = 3ps.
+    \begin{align}
+        11\text{ ps} + 3 \cdot 7\text{ ps} + 3\text{ ps} = 35\text{ ps}
+    \end{align}
+
+    From this we can find the maximum clock frequency with: 
+    \begin{align}
+        f_{\max} = \frac{1}{T_{\min}} = \frac{1}{35 \cdot 10^{-12}\text{ s}} = 28.6\text{ GHz}
+    \end{align}
+\end{adjustwidth}
+
+\newpage
+\subsection{Problem 4}
+Implement a timer. It has one input: start and one output: done. The timer is started
+with a single clock cycle high (1) of input start. It shall count for 10 clock cycles and then
+output high (1) at output done. During counting done shall be low (0).
+Draw the schematic of the circuit and sketch the Chisel code to describe it.
+
+\subsubsection{Solution}
+\begin{figure} [h]
+    \centering
+    \includegraphics[width=0.5\linewidth]{images//2022/Q4-2022.png}
+\end{figure}
+\begin{adjustwidth}{2em}{0pt}
+    \begin{verbatim}
+        import chisel3._
+        import chisel3.util._
+        
+        class Circuit extends Module {
+            val io = IO(new Bundle {
+                val start  = Input(Bool())
+                val done = Output(Bool())
+            })
+        
+            val cnt = RegInit(0.U(4.W))
+
+            val done = cnt === 0.U
+            val dec = cnt - 1.U
+
+            cnt := Mux(io.start,
+                    10.U, 
+                    Mux(done,
+                    0.U,
+                    dec
+                )
+            )
+            
+            io.done := done
+        }
+    \end{verbatim}
+\end{adjustwidth}
+
+\newpage
+\subsection{Problem 5}
+Draw the state machine and the datapath for the following circuit:
+\begin{itemize}
+    \item A vending machine that accepts coins of 5 and 10 kr. A soda costs 10 kr.
+    \item When the sum of coins inserted into the vending machine is larger or equal to 10 kr, one can buy a soda by pressing the buy button.
+    \item The inputs to the circuit are coin5, coin10, buy, and return.
+    \item By pressing the return button, any money in the machine will be returned to the customer.
+    \item Assume that all input signals are valid for one clock cycle (no edged detection needed).
+    \item The outputs are a release and a money Return signal. The output signals have to be valid for only one clock cycle.
+\end{itemize}
+Note, that this exercise is related to your vending machine project, but it is NOT your
+vending machine. The specification is different (considerably simpler).
+
+\subsubsection{Solution}
+\begin{figure} [h]
+    \centering
+    \includegraphics[width=0.5\linewidth]{images//2021/Q4-state-2021.png}
+\end{figure}
+\begin{figure} [h]
+    \centering
+    \includegraphics[width=0.7\linewidth]{images/2021/Q4-datapath-2021.png}
+\end{figure}
+
+\end{document}

@@ -1,0 +1,231 @@
+\documentclass[main.tex]{subfiles}
+\begin{document}
+
+\subsection{Problem 1}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.5\linewidth]{images/2021/Q1-2021.png}
+\end{figure}
+Write the Chisel code for the circuit in Figure 1. The register shall be 8 bits wide and shall
+be initialized to 0 on reset. Explain in your own words what the circuit does.
+
+\subsubsection{Solution}
+\begin{adjustwidth}{2em}{0pt}
+    \begin{verbatim}
+        import chisel3._
+
+        class Circuit extends Module {
+            val io = IO(new Bundle {
+                val din  = Input(UInt(8.W))
+                val load = Input(Bool())
+                val add  = Input(Bool())
+                val dout = Output(UInt(8.W))
+            })
+        
+            // Registers initialized to 0
+            val regA = RegInit(0.U(8.W))
+            val regB = RegInit(0.U(8.W))
+        
+            // regA load behavior
+            regA := Mux(io.load, io.din, regA)
+        
+            // Adder
+            val sum = regA + regB
+        
+            // regB behavior
+            regB := Mux(io.add, sum, 0.U)
+        
+            // Output
+            io.dout := regB
+        }
+    \end{verbatim}
+\end{adjustwidth}
+
+\newpage
+\subsection{Problem 2}
+Given following Chisel code:
+\begin{verbatim}
+    val reg = RegInit(0.U(8.W))
+    switch(sel) {
+        is(0.U) { reg := 0.U}
+        is(1.U) { reg := reg}
+        is(2.U) { reg := reg << din}
+        is(3.U) { reg := reg + din}
+        is(4.U) { reg := reg - din}
+        is(5.U) { reg := reg + reg}
+    }
+\end{verbatim}
+Explain the function and draw a block diagram.
+
+\subsubsection{Solution}
+\begin{figure} [h]
+    \centering
+    \includegraphics[width=0.5\linewidth]{images//2021/Q2-2021.png}
+\end{figure}
+\begin{adjustwidth}{2em}{0pt}
+    This circuit consists of a register connected to a MUX controlled by a select signal Sel. This allows for the operations:
+    \begin{itemize}
+        \item Set Reg = 0.
+        \item Set Reg = Reg.
+        \item Set Reg = Reg + din.
+        \item Set Reg = Reg - din.
+        \item Set Reg = Reg + Reg.
+        \item And left-shift Reg by din bits.
+    \end{itemize}
+\end{adjustwidth}
+
+\newpage
+\newpage
+\subsection{Problem 3}
+To store state in a digital circuit we need a form of memory. In an ASIC and in an FPGA there are two types of memories: flip-flops and static RAM (SRAM) blocks. What is the cost in number of transistors for an SRAM cell and a flip-flop? Find the (English) Wikipedia entries of SRAM and a master-slave D flip-flop and explore the schematics. How
+many transistors are needed to implement CMOS SRAM cell or a master-slave D flip-flop? (remember, a NAND or NOR gate needs 4 transistors, an inverter 2 transistors
+
+\subsubsection{Solution}
+\begin{adjustwidth}{2em}{0pt}
+
+    \note{This solution was provided by ChatGTP, not at calculations/solutions might be correct.}
+    
+    
+    To compare the implementation cost of memory in digital circuits, we count the number of transistors required for a CMOS SRAM cell and a master-slave D flip-flop.
+    
+    \subsubsection*{SRAM Cell}
+    
+    A standard CMOS SRAM bit cell is implemented as a \textbf{6-transistor (6T) cell}. It consists of:
+    
+    \begin{itemize}
+        \item Two cross-coupled inverters used to store the bit
+        \item Two access transistors used for read/write access
+    \end{itemize}
+    
+    Since an inverter requires 2 transistors:
+    
+    \[
+    2 \times 2 = 4
+    \]
+    
+    transistors are needed for the two inverters.
+    
+    Additionally, there are two access transistors:
+    
+    \[
+    4 + 2 = 6
+    \]
+    
+    Thus, a CMOS SRAM cell requires:
+    
+    \[
+    \boxed{6 \text{ transistors per bit}}
+    \]
+    
+    \subsubsection*{Master-Slave D Flip-Flop}
+    
+    A master-slave D flip-flop consists of two latches:
+    
+    \[
+    \text{Master latch} + \text{Slave latch}
+    \]
+    
+    Each latch can be implemented using:
+    
+    \begin{itemize}
+        \item Two inverters
+        \item Two transmission gates
+    \end{itemize}
+    
+    Since:
+    
+    \[
+    1 \text{ inverter} = 2 \text{ transistors}
+    \]
+    
+    and
+    
+    \[
+    1 \text{ transmission gate} = 2 \text{ transistors}
+    \]
+    
+    the transistor count for one latch is:
+    
+    \[
+    (2 \times 2) + (2 \times 2) = 8
+    \]
+    
+    Since a master-slave flip-flop uses two latches:
+    
+    \[
+    2 \times 8 = 16
+    \]
+    
+    Thus, a master-slave D flip-flop requires:
+    
+    \[
+    \boxed{16 \text{ transistors per bit}}
+    \]
+    
+    \subsubsection*{Conclusion}
+    
+    Comparing the two memory implementations:
+    
+    \[
+    \text{SRAM cell} = 6 \text{ transistors/bit}
+    \]
+    
+    \[
+    \text{Master-slave D flip-flop} = 16 \text{ transistors/bit}
+    \]
+    
+    SRAM is therefore significantly more area-efficient, which is why large memories are implemented using SRAM cells, while flip-flops are mainly used for registers and sequential logic.
+\end{adjustwidth}
+
+\newpage
+\subsection{Problem 4}
+Draw the state machine and datapath for the following circuit:
+\begin{itemize}
+    \item A vending machine that accepts coins of 5 and 10 kr.
+    \item A soda costs 10 kr. When the sum of coins inserted into the vending machine is larger or equal to 10 kr.
+    \item One can buy a soda by pressing the buy button.
+    \item The inputs to the circuit are coin5, coin10, buy, and return. 
+    \item By pressing the return button, any money in the machine will be returned to the customer.
+    \item Assume that all input signals are valid for one clock cycle (no edged detection needed).
+    \item The outputs are a release and a moneyReturn signal.
+    \item The output signals have to be valid for only one clock cycle.
+\end{itemize}
+Note, that this exercise is related to your vending machine project, but it is NOT your vending machine. The specification is different (considerably simpler)
+
+\subsubsection{Solution}
+\begin{figure} [h]
+    \centering
+    \includegraphics[width=0.5\linewidth]{images//2021/Q4-state-2021.png}
+\end{figure}
+\begin{figure} [h]
+    \centering
+    \includegraphics[width=0.7\linewidth]{images/2021/Q4-datapath-2021.png}
+\end{figure}
+
+\newpage
+\subsection{Problem 5}
+Find and describe the critical path in the circuit shown in the figure.
+What is the maximum clock frequency?
+\begin{multicols}{2}
+    \centering
+    \includegraphics[width=1\linewidth]{images//2021/Q5-circuit-2021.png}
+    \columnbreak
+    \includegraphics[width=1\linewidth]{images//2021/Q5-timing-2021.png}
+\end{multicols}
+
+\subsubsection{Solution}
+\begin{adjustwidth}{2em}{0pt}
+    The critical path is the longest register-register path. Looking at the circuit we can find the longest path to be through, R1-G1-G2-G3-G7-R6 and equally as long, R1-G1-G2-G4-G5-R5. 
+
+    Calculating the time we get, DFF clock-to-Q delay + 4 gate delays + setup time. With tCQ prop = 11ps, gate prop = 7ps, tSU = 3ps.
+    \begin{align}
+        11\text{ ps} + 4 \cdot 7\text{ ps} + 3\text{ ps} = 42\text{ ps}
+    \end{align}
+
+    From this we can find the maximum clock frequency with: 
+    \begin{align}
+        f_{\max} = \frac{1}{T_{\min}} = \frac{1}{42 \cdot 10^{-12}\text{ s}} = 23.8\text{ GHz}
+    \end{align}
+\end{adjustwidth}
+
+\end{document}

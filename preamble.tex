@@ -1,0 +1,36 @@
+% Page layout
+\usepackage[a4paper, left=20mm, right=20mm, top=30mm, bottom=20mm]{geometry}
+
+% Language
+\usepackage[english]{babel}
+
+% Text/layout
+\usepackage{multicol}
+\usepackage{changepage}
+\usepackage{float}
+\setlength{\parskip}{3pt}
+\setlength{\parindent}{0pt}
+\setcounter{secnumdepth}{0} % remove numbering infront of table of content intries.
+\setcounter{tocdepth}{4}    % include paragraph in table of content.
+\usepackage{titlesec}       % enable redefenition of commands.  
+\titleformat{\paragraph}    % edit behavior of \paragraph{} to include a linebreak after the title.
+{\normalfont\normalsize\bfseries}
+{\theparagraph}
+{1em}
+{}
+\titlespacing*{\paragraph}
+{0pt}{3.25ex plus 1ex minus .2ex}{0em}
+
+% Math
+\usepackage{amsmath}
+\usepackage{amsthm}
+\newtheorem*{note}{Note}
+
+% Graphics
+\usepackage{graphicx}
+
+% Subfiles
+\usepackage{subfiles}
+
+% Links - load near the end
+\usepackage[colorlinks=true, allcolors=blue]{hyperref}
