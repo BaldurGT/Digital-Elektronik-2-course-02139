@@ -9,5 +9,5 @@ This work is licensed under the *Creative Commons Attribution–NonCommercial 4.
 - **Attribution** — Appropriate credit must be given to the original source (this GitHub repository).
 - **NonCommercial** — The material may not be used for commercial purposes.
 
-For the full license text, see:
-[https://creativecommons.org/licenses/by-nc/4.0/](creativecommons.org)
+### For the full license text, see:
+[Creativecommons.org](https://creativecommons.org/licenses/by-nc/4.0/)
